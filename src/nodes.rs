@@ -1,6 +1,6 @@
 use grid::Grid;
 
-pub type Node = usize;
+pub type Node = isize;
 
 #[derive(Debug, Clone)]
 pub struct Nodes {

@@ -3,6 +3,7 @@ use bevy::{
     prelude::*,
     window::CursorMoved,
 };
+use std::cmp::min;
 
 #[derive(Default)]
 pub struct MouseState {
@@ -27,11 +28,10 @@ pub (super) fn mouse_position(
 pub (super) fn mouse_click(
     mouse_button: Res<Input<MouseButton>>,
     mouse_position: Res<MousePosition>,
-    scene: Res<Scene>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    node_query: Query<(&Point, &Handle<ColorMaterial>)>
+    mut scene: ResMut<Scene>,
+    node_query: Query<&Point>
 ) {
-    if mouse_button.pressed(MouseButton::Left) {
+    if mouse_button.just_pressed(MouseButton::Left) {
         let mouse_pos = mouse_position.position;
         let mouse_pos = Vec2::new(
             mouse_pos.x() - WINDOW_WIDTH as f32 / 2.,
@@ -39,15 +39,15 @@ pub (super) fn mouse_click(
         );
 
         node_query.iter()
-            .find(|(node, _material)| {
+            .find(|node| {
                 let node_pos = scene.point_to_world(node).unwrap();
 
                 distance(mouse_pos, node_pos) < SCENE_TAIL_SIZE as f32 / 2.
             })
-            .map(|(_node, material)| {
-                let mut material = materials.get_mut(material).unwrap();
+            .map(|node| {
+                let current = scene.get_value(*node);
 
-                material.color = Color::rgb(1.0, 0.0, 0.0);
+                scene.set_value(*node, min(INFINITY, current + MAX_ADD));
             });
     }
 }
