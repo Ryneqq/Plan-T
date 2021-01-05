@@ -33,7 +33,7 @@ impl Primes {
         self.primes
             .iter()
             .enumerate()
-            .filter_map(|( i, p )| if *p { Some(Self::prime(i)) } else { None })
+            .filter_map(|(idx, is_prime)| if *is_prime { Some(Self::prime(idx)) } else { None })
     }
 
     pub fn divisors<'a>(&'a self, number: usize) -> impl Iterator<Item = usize> + 'a {
@@ -44,7 +44,7 @@ impl Primes {
             let primes = self.primes[..=idx]
                 .iter()
                 .enumerate()
-                .filter_map(|( i, p )| if *p { Some(Self::prime(i)) } else { None });
+                .filter_map(|(idx, is_prime)| if *is_prime { Some(Self::prime(idx)) } else { None });
 
             Some(primes)
         } else {
