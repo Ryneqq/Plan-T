@@ -1,5 +1,5 @@
 [package]
-name = "big_bang"
+name = "tiny_bang"
 version = "0.1.0"
 authors = ["Pawel Rynowiecki <pawel.rynowiecki@anixe.pl>"]
 edition = "2018"
