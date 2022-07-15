@@ -1,11 +1,6 @@
-use crate::{consts::*, Point, Scene};
+use crate::{consts::*, Node, Point, Scene};
 use bevy::{prelude::*, window::CursorMoved};
-use std::cmp::min;
-
-// #[derive(Default)]
-// pub struct MouseState {
-//     cursor_moved_event_reader: EventReader<CursorMoved>,
-// }
+use itertools::Itertools;
 
 #[derive(Debug, Default)]
 pub struct MousePosition {
@@ -14,7 +9,6 @@ pub struct MousePosition {
 
 pub(super) fn mouse_position(
     mut mouse: ResMut<MousePosition>,
-    // mut state: Local<MouseState>,
     mut cursor_moved_events: EventReader<CursorMoved>,
 ) {
     for event in cursor_moved_events.iter() {
@@ -26,9 +20,12 @@ pub(super) fn mouse_click(
     mouse_button: Res<Input<MouseButton>>,
     mouse_position: Res<MousePosition>,
     mut scene: ResMut<Scene>,
-    node_query: Query<&Point>,
+    mut node_query: Query<(&Point, &mut Sprite)>,
 ) {
-    if mouse_button.just_pressed(MouseButton::Left) {
+    let left_pressed = mouse_button.just_pressed(MouseButton::Left);
+    let right_pressed = !left_pressed && mouse_button.just_pressed(MouseButton::Right);
+
+    if left_pressed || right_pressed {
         let mouse_pos = mouse_position.position;
         let mouse_pos = Vec2::new(
             mouse_pos.x - WINDOW_WIDTH as f32 / 2.,
@@ -36,16 +33,23 @@ pub(super) fn mouse_click(
         );
 
         node_query
-            .iter()
-            .find(|node| {
+            .iter_mut()
+            .sorted_by(|(x, _), (y, _)| scene.get_value(**y).cmp(&scene.get_value(**x)))
+            .for_each(|(node, mut sprite)| {
                 let node_pos = scene.point_to_world(node).unwrap();
 
-                distance(mouse_pos, node_pos) < SCENE_TAIL_SIZE as f32 / 2.
-            })
-            .map(|node| {
-                let current = scene.get_value(*node);
+                if distance(mouse_pos, node_pos) < SCENE_TAIL_SIZE as f32 / 2. {
+                    if left_pressed {
+                        scene.set_value(*node, Node::Alive);
+                    } else if right_pressed {
+                        scene.set_value(*node, Node::Dead);
+                    }
+                }
 
-                scene.set_value(*node, min(INFINITY, current + MAX_ADD));
+                match scene.get_value(*node) {
+                    Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
+                    Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
+                }
             });
     }
 }

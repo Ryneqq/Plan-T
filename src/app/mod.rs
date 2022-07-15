@@ -9,7 +9,7 @@ mod update;
 pub fn run_app() {
     App::new()
         .insert_resource(WindowDescriptor {
-            title: "BIG bang".to_string(),
+            title: "Plan-T".to_string(),
             width: WINDOW_WIDTH as f32,
             height: WINDOW_HEIGHT as f32,
             vsync: true,
@@ -18,6 +18,7 @@ pub fn run_app() {
         })
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .insert_resource(mouse::MousePosition::default())
+        .insert_resource(update::Pause::default())
         .insert_resource(Scene::new())
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup::setup)

@@ -1,5 +1,5 @@
 [package]
-name = "tiny_bang"
+name = "plan-t"
 version = "0.1.0"
 authors = ["Pawel Rynowiecki <pawel.rynowiecki@anixe.pl>"]
 edition = "2018"

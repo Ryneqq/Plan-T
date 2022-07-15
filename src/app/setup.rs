@@ -8,7 +8,7 @@ pub(super) fn setup(mut commands: Commands, scene: Res<Scene>) {
     let tail_color = Color::rgb(0.9, 0.9, 0.9);
     let tail_size = SCENE_TAIL_SIZE as f32;
 
-    for (node, position) in scene.iter_nodes() {
+    for (node, position) in scene.iter_world() {
         commands
             .spawn_bundle(SpriteBundle {
                 transform: Transform::from_translation(position.extend(0.0)),

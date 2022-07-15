@@ -1,6 +1,17 @@
 use grid::Grid;
 
-pub type Node = isize;
+// pub type Node = isize;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Node {
+    Dead,
+    Alive,
+}
+
+impl Default for Node {
+    fn default() -> Self {
+        Node::Dead
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Nodes {

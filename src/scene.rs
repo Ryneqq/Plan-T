@@ -1,10 +1,8 @@
 use crate::consts::*;
-use crate::{Node, Nodes, Primes};
+use crate::{Node, Nodes};
 use bevy::prelude::{Component, Vec2};
 use itertools::Itertools;
 use std::collections::HashMap;
-
-// pub type Point = (usize, usize);
 
 #[derive(Debug, Copy, Clone, Component, Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub struct Point(pub usize, pub usize);
@@ -19,7 +17,6 @@ impl From<(usize, usize)> for Point {
 pub struct Scene {
     world: HashMap<Point, Vec2>,
     nodes: Nodes,
-    primes: Primes,
 }
 
 impl Scene {
@@ -35,7 +32,6 @@ impl Scene {
         let mut new = Self {
             world: Default::default(),
             nodes,
-            primes: Primes::new(INFINITY as usize),
         };
 
         for i in 0..grid_width {
@@ -50,13 +46,17 @@ impl Scene {
         new
     }
 
-    pub fn iter_nodes<'a>(&'a self) -> impl Iterator<Item = (Point, Vec2)> + 'a {
+    pub fn iter_world<'a>(&'a self) -> impl Iterator<Item = (Point, Vec2)> + 'a {
         self.world
             .iter()
             .map(|(point, position)| (*point, *position))
     }
 
-    pub fn set_value(&mut self, Point(x, y): Point, value: isize) {
+    pub fn iter_points<'a>(&'a self) -> impl Iterator<Item = Point> + 'a {
+        self.world.iter().map(|(point, _)| *point)
+    }
+
+    pub fn set_value(&mut self, Point(x, y): Point, value: Node) {
         self.nodes[x][y] = value;
     }
 
@@ -102,79 +102,108 @@ impl Scene {
             .chain(self.iter_further_neighbors(point))
     }
 
-    pub fn update(&mut self, point: Point) {
-        if self.is_stable(point) {
-            self.update_stable(point)
-        } else {
-            self.update_not_stable(point)
+    pub fn update(&mut self) {
+        let new_nodes = self
+            .iter_points()
+            .map(|point| {
+                let mut neighbors = 0;
+                for neighbor in self.iter_neighbors(point) {
+                    if self.get_value(neighbor) == Node::Alive {
+                        neighbors += 1;
+                    }
+                }
+
+                let value = match self.get_value(point) {
+                    Node::Dead => {
+                        if neighbors == 3 {
+                            Node::Alive
+                        } else {
+                            Node::Dead
+                        }
+                    }
+                    Node::Alive => {
+                        if neighbors == 2 || neighbors == 3 {
+                            Node::Alive
+                        } else {
+                            Node::Dead
+                        }
+                    }
+                };
+
+                (point, value)
+            })
+            .collect_vec();
+
+        for (point, value) in new_nodes {
+            self.set_value(point, value);
         }
     }
 
-    fn update_stable(&mut self, origin: Point) {
-        let neighbours = self.iter_neighbors(origin).collect_vec();
-        let current_value = self.get_value(origin);
+    // fn update_stable(&mut self, origin: Point) {
+    //     let neighbours = self.iter_neighbors(origin).collect_vec();
+    //     let current_value = self.get_value(origin);
 
-        if current_value < 2 {
-            return;
-        };
+    //     if current_value < 2 {
+    //         return;
+    //     };
 
-        neighbours
-            .iter()
-            .sorted_by(|x, y| self.get_value(**x).cmp(&self.get_value(**y)))
-            .next()
-            .map(|point| {
-                let swap_value = self.get_value(*point);
+    //     neighbours
+    //         .iter()
+    //         .sorted_by(|x, y| self.get_value(**x).cmp(&self.get_value(**y)))
+    //         .next()
+    //         .map(|point| {
+    //             let swap_value = self.get_value(*point);
 
-                // TODO: and swap point is not stable?
-                if swap_value < current_value {
-                    self.set_value(*point, current_value);
-                    self.set_value(origin, swap_value);
-                }
-            });
-    }
+    //             // TODO: and swap point is not stable?
+    //             if swap_value < current_value {
+    //                 self.set_value(*point, current_value);
+    //                 self.set_value(origin, swap_value);
+    //             }
+    //         });
+    // }
 
-    fn update_not_stable(&mut self, point: Point) {
-        let neighbours = self.iter_neighbors(point).collect_vec();
-        let mut current_value = self.get_value(point);
+    // fn update_not_stable(&mut self, point: Point) {
+    //     let neighbours = self.iter_neighbors(point).collect_vec();
+    //     let mut current_value = self.get_value(point);
 
-        if current_value < 2 {
-            return;
-        };
+    //     if current_value < 2 {
+    //         return;
+    //     };
 
-        neighbours
-            .iter()
-            .sorted_by(|x, y| self.get_value(**x).cmp(&self.get_value(**y)))
-            .for_each(|point| {
-                if current_value < 2 {
-                    return;
-                };
-                let neighbor_value = self.get_value(*point);
-                let divisors = self.primes.divisors(current_value.abs() as usize);
-                let spread_value = divisors
-                    .map(|div| div as isize)
-                    .find(|div| {
-                        &current_value != div
-                            && neighbor_value + current_value / div <= current_value
-                    })
-                    .map(|div| current_value / div);
+    //     neighbours
+    //         .iter()
+    //         .sorted_by(|x, y| self.get_value(**x).cmp(&self.get_value(**y)))
+    //         .for_each(|point| {
+    //             if current_value < 2 {
+    //                 return;
+    //             };
+    //             let neighbor_value = self.get_value(*point);
+    //             let divisors = self.primes.divisors(current_value.abs() as usize);
+    //             let spread_value = divisors
+    //                 .map(|div| div as isize)
+    //                 .find(|div| {
+    //                     &current_value != div
+    //                         && neighbor_value + current_value / div <= current_value
+    //                 })
+    //                 .map(|div| current_value / div);
 
-                if let Some(spread_value) = spread_value {
-                    current_value -= spread_value;
-                    self.set_value(*point, neighbor_value + spread_value)
-                }
-            });
+    //             if let Some(spread_value) = spread_value {
+    //                 current_value -= spread_value;
+    //                 self.set_value(*point, neighbor_value + spread_value)
+    //             }
+    //         });
 
-        self.set_value(point, current_value)
-    }
+    //     self.set_value(point, current_value)
+    // }
 
-    pub fn is_stable(&self, point: Point) -> bool {
-        let current_value = self.get_value(point).abs() as usize;
+    // pub fn is_stable(&self, point: Point) -> bool {
+    //     let current_value = self.get_value(point).abs() as usize;
 
-        self.primes
-            .nearest_prime(current_value)
-            .map(|prime| current_value == prime)
-            .unwrap_or(false)
-    }
+    //     self.primes
+    //         .nearest_prime(current_value)
+    //         .map(|prime| current_value == prime)
+    //         .unwrap_or(false)
+    // }
 
     fn insert(&mut self, index: Point, world: Vec2) {
         self.world.insert(index, world);

@@ -1,26 +1,52 @@
-use crate::consts::*;
-use crate::Point;
-use crate::Scene;
+use crate::{Node, Point, Scene};
 use bevy::prelude::*;
-use itertools::Itertools;
 
-pub fn update(mut scene: ResMut<Scene>, mut node_query: Query<(&Point, &mut Sprite)>) {
-    node_query
-        .iter_mut()
-        .sorted_by(|(x, _), (y, _)| scene.get_value(**y).cmp(&scene.get_value(**x)))
-        .for_each(|(node, mut sprite)| {
-            let color_divider = (MAX_ADD / 10) as f32;
-            scene.update(*node);
+#[derive(Debug)]
+pub struct Pause {
+    pub paused: bool,
+}
 
-            if scene.is_stable(*node) {
-                let value = scene.get_value(*node);
-                let green = value as f32 / color_divider;
+impl Pause {
+    pub fn switch(&mut self) {
+        self.paused = !self.paused;
+    }
+}
 
-                sprite.color = Color::rgb(1.0 - green, 1.0, 1.0 - green);
-            } else {
-                let red = scene.get_value(*node) as f32 / color_divider;
+impl Default for Pause {
+    fn default() -> Self {
+        Self { paused: true }
+    }
+}
 
-                sprite.color = Color::rgb(1.0, 1.0 - red, 1.0 - red);
+pub fn update(
+    input: Res<Input<KeyCode>>,
+    mut pause: ResMut<Pause>,
+    mut scene: ResMut<Scene>,
+    mut node_query: Query<(&Point, &mut Sprite)>,
+) {
+    if input.just_pressed(KeyCode::Space) {
+        pause.switch();
+    }
+
+    if !pause.paused || input.just_pressed(KeyCode::S) {
+        scene.update();
+
+        node_query
+            .iter_mut()
+            .for_each(|(node, mut sprite)| match scene.get_value(*node) {
+                Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
+                Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
+            });
+    }
+
+    if input.just_pressed(KeyCode::C) {
+        node_query.iter_mut().for_each(|(node, mut sprite)| {
+            scene.set_value(*node, Node::Dead);
+
+            match scene.get_value(*node) {
+                Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
+                Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
             }
         });
+    }
 }
