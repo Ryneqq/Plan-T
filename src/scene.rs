@@ -114,18 +114,21 @@ impl Scene {
                 }
 
                 let value = match self.get_value(point) {
+                    Node::WillBeAlive => Node::Alive,
+                    Node::WillBeDead => Node::Dead,
                     Node::Dead => {
                         if neighbors == 3 {
-                            Node::Alive
+                            Node::WillBeAlive
                         } else {
                             Node::Dead
                         }
                     }
                     Node::Alive => {
                         if neighbors == 2 || neighbors == 3 {
+                            // if neighbors <= 3 {
                             Node::Alive
                         } else {
-                            Node::Dead
+                            Node::WillBeDead
                         }
                     }
                 };

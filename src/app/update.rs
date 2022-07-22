@@ -18,6 +18,22 @@ impl Default for Pause {
     }
 }
 
+pub fn green() -> Color {
+    Color::rgb(0.1, 0.6, 0.3)
+}
+
+pub fn red() -> Color {
+    Color::rgb(0.6, 0.3, 0.1)
+}
+
+pub fn white() -> Color {
+    Color::rgb(0.9, 0.9, 0.9)
+}
+
+pub fn gray() -> Color {
+    Color::rgb(0.5, 0.5, 0.5)
+}
+
 pub fn update(
     input: Res<Input<KeyCode>>,
     mut pause: ResMut<Pause>,
@@ -34,8 +50,10 @@ pub fn update(
         node_query
             .iter_mut()
             .for_each(|(node, mut sprite)| match scene.get_value(*node) {
-                Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
-                Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
+                Node::Alive => sprite.color = green(),
+                Node::Dead => sprite.color = white(),
+                Node::WillBeDead => sprite.color = red(),
+                Node::WillBeAlive => sprite.color = gray(),
             });
     }
 
@@ -44,8 +62,7 @@ pub fn update(
             scene.set_value(*node, Node::Dead);
 
             match scene.get_value(*node) {
-                Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
-                Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
+                _ => sprite.color = white(),
             }
         });
     }

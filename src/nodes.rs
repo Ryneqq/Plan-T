@@ -4,7 +4,9 @@ use grid::Grid;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Node {
     Dead,
+    WillBeDead,
     Alive,
+    WillBeAlive,
 }
 
 impl Default for Node {

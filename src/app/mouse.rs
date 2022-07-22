@@ -41,14 +41,11 @@ pub(super) fn mouse_click(
                 if distance(mouse_pos, node_pos) < SCENE_TAIL_SIZE as f32 / 2. {
                     if left_pressed {
                         scene.set_value(*node, Node::Alive);
+                        sprite.color = Color::rgb(0.1, 1.0, 0.1);
                     } else if right_pressed {
                         scene.set_value(*node, Node::Dead);
+                        sprite.color = Color::rgb(0.9, 0.9, 0.9);
                     }
-                }
-
-                match scene.get_value(*node) {
-                    Node::Alive => sprite.color = Color::rgb(0.1, 1.0, 0.1),
-                    Node::Dead => sprite.color = Color::rgb(0.9, 0.9, 0.9),
                 }
             });
     }
